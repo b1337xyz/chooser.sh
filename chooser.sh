@@ -25,6 +25,7 @@ cleanup() {
     for ((i=0;i<=ROWS;i++));do printf '\e[2K'; cursor_down ;done
     printf '\e[%d;1H' "$offset"
     stty echo </dev/tty
+    exec 1>&3 3>&-  # restore stdout and close fd #3
     [ -n "$sel" ] && echo "$sel"
 }
 list_choices() {
@@ -41,19 +42,21 @@ else
     choices=("$@")
 fi
 
+exec 3>&1  # send stdout to fd 3
+exec >&2   # send stdout to stderr
 stty -echo </dev/tty
 pos=0
 total_choices=${#choices[@]}
 ROWS=$(( (LINES / 2) + 1))
 set_offset
-if [ "$(( offset + ROWS ))" -gt "$LINES" ] && [ "$total_choices" -ge "$ROWS" ];then # TODO: don't do this
+if (( (offset + ROWS) > LINES )) && (( total_choices >= ROWS ));then # TODO: don't do this
     # if there is not enough rows clear the screen and reset the offset
     printf '\e[2J\e[1;1H';
     set_offset
 fi
 cursor=$offset
 
-[ "$((total_choices - pos))" -ge "$ROWS" ] && printf '\e[%d;1H▼' "$((ROWS + offset))"
+(( (total_choices - pos) >= ROWS )) && printf '\e[%d;1H▼' "$((ROWS + offset))"
 trap cleanup EXIT
 while :;do
     actual_pos=$((cursor - offset + pos))
@@ -61,18 +64,20 @@ while :;do
     read_keys
     case "${KEY}" in
         k)
-            if [ "$cursor" -eq "$offset" ] && [ "$pos" -gt 0 ];then
+            if (( cursor == offset )) && (( pos == 0 ));then
                 pos=$((pos - 1))
-            elif [ "$cursor" -gt "$offset" ];then
+            elif (( cursor > offset ));then
                 cursor=$((cursor - 1))
                 cursor_up
             fi
             ;;
         j)
-            [ "$actual_pos" -eq "$((total_choices - 1))" ] && continue # TODO: fix this, unecessary logic?
-            if [ "$cursor" -eq "$((ROWS + offset - 1))" ] && [ "$((total_choices - pos))" -ne "$ROWS" ];then
+            (( actual_pos == (total_choices - 1) )) && continue # TODO: fix this, unecessary logic?
+            if (( cursor == (ROWS + offset - 1) )) && (( (total_choices - pos) != ROWS ))
+            then
                 pos=$((pos + 1))
-            elif [ "$cursor" -lt "$((ROWS + offset - 1))" ];then
+            elif (( cursor < (ROWS + offset - 1) ))
+            then
                 cursor=$((cursor + 1))
                 cursor_down
             fi

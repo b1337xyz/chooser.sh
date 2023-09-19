@@ -17,4 +17,6 @@ seq 1 5 | bash chooser.sh -
 █4
  5
 
+# storing the output
+choice=$(bash chooser.sh 1 2 3)
 ```
