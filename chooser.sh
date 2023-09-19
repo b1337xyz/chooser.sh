@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -eo pipefail
+set -e
 
 # Resources:
 #   https://espterm.github.io/docs/VT100%20escape%20codes.html
@@ -26,7 +26,7 @@ cleanup() {
     printf '\e[%d;1H' "$offset"
     stty echo </dev/tty
     exec 1>&3 3>&-  # restore stdout and close fd #3
-    [ -n "$sel" ] && echo "$sel"
+    [ -n "$sel" ] && printf '%s\n' "$sel"
 }
 list_choices() {
     printf '\e[%d;1H' "$offset"  # go back to the start position
@@ -35,6 +35,7 @@ list_choices() {
 }
 
 [ -z "$1" ] && usage
+
 declare -a choices=()
 if [ "$1" = - ];then
     while read -r i;do choices+=("$i") ;done
