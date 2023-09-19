@@ -50,9 +50,8 @@ pos=0
 total_choices=${#choices[@]}
 ((ROWS = (LINES / 2) + 1))
 set_offset
-if (( (offset + ROWS) > LINES )) && (( total_choices >= ROWS ));then # TODO: don't do this
-    # if there is not enough rows clear the screen and reset the offset
-    printf '\e[2J\e[1;1H';
+if (( (offset + ROWS) > LINES )) && (( total_choices >= ROWS ));then # TODO: don't do this?
+    printf '\e[%d;1H' "$((offset - ROWS + 1))";
     set_offset
 fi
 cursor=$offset
@@ -60,7 +59,7 @@ cursor=$offset
 (( (total_choices - pos) >= ROWS )) && printf '\e[%d;1H▼' "$((ROWS + offset))"
 trap cleanup EXIT
 while :;do
-    actual_pos=$((cursor - offset + pos))
+    ((actual_pos = cursor - offset + pos)) || true
     list_choices
     read_keys
     case "${KEY}" in
