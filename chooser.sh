@@ -50,8 +50,15 @@ pos=0
 total_choices=${#choices[@]}
 ((ROWS = (LINES / 2) + 1))
 set_offset
-if (( (offset + ROWS) > LINES )) && (( total_choices >= ROWS ));then # TODO: don't do this?
-    printf '\e[%d;1H' "$((offset - ROWS + 1))";
+if (( (offset + ROWS) >= LINES )) && (( total_choices >= ROWS ));then # TODO: is this needed?
+    # if the offset (starting cursor position) + ROWS goes beyond LINES and
+    # we have more choices than the number of ROWS change the offset to what it will be
+    # after listing the choices.
+    if (( offset == LINES ));then
+        printf '\e[%d;1H' "$((offset - ROWS))";
+    else
+        printf '\e[%d;1H' "$((offset - ROWS + 1))";
+    fi
     set_offset
 fi
 cursor=$offset
@@ -59,15 +66,15 @@ cursor=$offset
 (( (total_choices - pos) >= ROWS )) && printf '\e[%d;1H▼' "$((ROWS + offset))"
 trap cleanup EXIT
 while :;do
-    ((actual_pos = cursor - offset + pos)) || true
+    actual_pos=$((cursor - offset + pos))
     list_choices
     read_keys
     case "${KEY}" in
         k)
             if (( cursor == offset )) && (( pos > 0 ));then
-                ((pos-=1))
+                pos=$((pos - 1))
             elif (( cursor > offset ));then
-                ((cursor-=1))
+                cursor=$((cursor - 1))
                 cursor_up
             fi
             ;;
@@ -75,14 +82,14 @@ while :;do
             (( actual_pos == (total_choices - 1) )) && continue # TODO: fix this, unecessary logic?
             if (( cursor == (ROWS + offset - 1) )) && (( (total_choices - pos) != ROWS ))
             then
-                ((pos+=1))
+                pos=$((pos + 1))
             elif (( cursor < (ROWS + offset - 1) ))
             then
-                ((cursor+=1))
+                cursor=$((cursor + 1))
                 cursor_down
             fi
             ;;
-        "") # TODO: fix this, pressing ctrl+j and some other keys triggers this case 
+        '') # TODO: fix this, pressing ctrl+j and some other keys triggers this case 
             sel=${choices[actual_pos]} ; exit 0 ;;
     esac
 done
