@@ -48,7 +48,7 @@ exec >&2   # send stdout to stderr
 stty -echo </dev/tty
 pos=0
 total_choices=${#choices[@]}
-ROWS=$(( (LINES / 2) + 1))
+((ROWS = (LINES / 2) + 1))
 set_offset
 if (( (offset + ROWS) > LINES )) && (( total_choices >= ROWS ));then # TODO: don't do this
     # if there is not enough rows clear the screen and reset the offset
@@ -65,10 +65,10 @@ while :;do
     read_keys
     case "${KEY}" in
         k)
-            if (( cursor == offset )) && (( pos == 0 ));then
-                pos=$((pos - 1))
+            if (( cursor == offset )) && (( pos > 0 ));then
+                ((pos-=1))
             elif (( cursor > offset ));then
-                cursor=$((cursor - 1))
+                ((cursor-=1))
                 cursor_up
             fi
             ;;
@@ -76,10 +76,10 @@ while :;do
             (( actual_pos == (total_choices - 1) )) && continue # TODO: fix this, unecessary logic?
             if (( cursor == (ROWS + offset - 1) )) && (( (total_choices - pos) != ROWS ))
             then
-                pos=$((pos + 1))
+                ((pos+=1))
             elif (( cursor < (ROWS + offset - 1) ))
             then
-                cursor=$((cursor + 1))
+                ((cursor+=1))
                 cursor_down
             fi
             ;;
