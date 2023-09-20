@@ -98,7 +98,7 @@ while :;do
                 cursor_down
             fi
             ;;
-        ""|$'\n'|$'\x0a') # TODO: fix this, pressing ctrl+j and some other keys triggers this case 
+        $'\n'|$'\x0a') # TODO: fix this, pressing ctrl+j and some other keys triggers this case 
             sel=${choices[actual_pos]} ; exit 0 ;;
     esac
 done
