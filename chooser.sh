@@ -5,8 +5,6 @@
 usage() { printf 'Usage: %s [choices...]\n' "${0##*/}"; exit 0; }
 cursor_up(){ printf '\e[A'; }
 cursor_down(){ printf '\e[B'; }
-cursor_save(){ printf '\e7'; }
-cursor_restore(){ printf '\e8'; }
 set_offset() { IFS='[;' read -p $'\e[6n' -d R -rs _ offset _ _ </dev/tty; }
 
 init_term() {
@@ -30,15 +28,12 @@ cleanup() {
 }
 
 read_keys(){
-    unset K1 K2
-    read -sN1 </dev/tty
-    case "$REPLY" in
-        [a-z]|'') KEY=$REPLY; return ;;
+    read -sN1 KEY </dev/tty
+    case "$KEY" in
+        [a-z]|'') return ;;
     esac
-    K1=$REPLY
     read -sN2 -t 0.0001 </dev/tty
-    K2=$REPLY
-    KEY=$K1$K2
+    KEY=$KEY$REPLY
 }
 
 list_choices() {
