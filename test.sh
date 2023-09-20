@@ -7,3 +7,5 @@ seq 1 30 | bash chooser.sh -
 x=$(bash chooser.sh $(ls -a))
 echo "$x"
 find ~/ -type d | head -1000 | bash chooser.sh -
+
+exit 0

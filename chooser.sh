@@ -13,7 +13,6 @@ init_term() {
     # printf '\e[?1000h'  # enable mouse support
     exec 3>&1  # send stdout to fd 3
     exec >&2   # send stdout to stderr
-    tput civis
     stty -echo </dev/tty
 }
 
@@ -22,7 +21,6 @@ cleanup() {
     for ((i=0;i<=ROWS;i++));do printf '\e[2K'; cursor_down ;done
     goto_row "$offset"
 
-    tput cnorm
     stty echo </dev/tty
     exec 1>&3 3>&-  # restore stdout and close fd #3
     [ -n "$sel" ] && printf '%s\n' "$sel"
@@ -41,7 +39,6 @@ list_choices() {
     goto_row "$offset"  # go back to the start position
     printf ' %-'${COLUMNS}'s\n' "${choices[@]:pos:$ROWS}" | cut -c -$((COLUMNS - 2)) # trim
     goto_row "$cursor"  # go back to the cursor position
-    printf '\e[1;31m>\e[m'
 }
 
 move_up() {
@@ -90,14 +87,16 @@ fi
 cursor=$offset
 
 (( total_choices > ROWS )) && { goto_row "$((ROWS + offset))"; printf ▼; }
+prev=$pos
+list_choices
 while :;do
     ((actual_pos = cursor - offset + pos))
-    list_choices
+    (( pos != prev )) && { prev=$pos; list_choices; }
     read_keys
     case "$KEY" in
         k|$'\E[A') move_up ;;
         j|$'\E[B') move_down ;;
-        $'\E') break ;; # Esc
-        $'\n') sel=${choices[actual_pos]} ; break ;;
+        $'\E') exit ;; # Esc
+        $'\n') sel=${choices[actual_pos]} ; exit ;;
     esac
 done
