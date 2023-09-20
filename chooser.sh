@@ -5,6 +5,7 @@
 usage() { printf 'Usage: %s [choices...]\n' "${0##*/}"; exit 0; }
 cursor_up(){ printf '\e[A'; }
 cursor_down(){ printf '\e[B'; }
+goto_row() { printf '\e[%d;1H' "$1"; }
 set_offset() { IFS='[;' read -p $'\e[6n' -d R -rs _ offset _ _ </dev/tty; }
 
 init_term() {
@@ -17,9 +18,9 @@ init_term() {
 }
 
 cleanup() {
-    printf '\e[%d;1H' "$offset"
+    goto_row "$offset"
     for ((i=0;i<=ROWS;i++));do printf '\e[2K'; cursor_down ;done
-    printf '\e[%d;1H' "$offset"
+    goto_row "$offset"
 
     tput cnorm
     stty echo </dev/tty
@@ -37,9 +38,10 @@ read_keys(){
 }
 
 list_choices() {
-    printf '\e[%d;1H' "$offset"  # go back to the start position
+    goto_row "$offset"  # go back to the start position
     printf ' %-'${COLUMNS}'s\n' "${choices[@]:pos:$ROWS}" | cut -c -$((COLUMNS - 2)) # trim
-    printf '\e[%d;1H\e[1;32m>\e[m' "$cursor"  # go back to the cursor position
+    goto_row "$cursor"  # go back to the cursor position
+    printf '\e[1;31m>\e[m'
 }
 
 move_up() {
@@ -77,17 +79,17 @@ pos=0
 total_choices=${#choices[@]}
 ((ROWS = (LINES / 2) + 1))
 set_offset
-if (( (offset + ROWS) > LINES )) && (( total_choices >= ROWS ));then
+if (( (offset + ROWS) > LINES )) && (( total_choices >= ROWS ));then # TODO: improve this
     if (( offset == LINES ));then
-        printf '\e[%d;1H' "$((offset - ROWS))"  # if added 1 this will break the script
+        goto_row "$((offset - ROWS))"  # if added 1 this will break the script
     else
-        printf '\e[%d;1H' "$((offset - ROWS + 1))"
+        goto_row "$((offset - ROWS + 1))"
     fi
     set_offset
 fi
 cursor=$offset
 
-(( total_choices > ROWS )) && printf '\e[%d;1H▼' "$((ROWS + offset))"
+(( total_choices > ROWS )) && { goto_row "$((ROWS + offset))"; printf ▼; }
 while :;do
     ((actual_pos = cursor - offset + pos))
     list_choices
@@ -95,7 +97,7 @@ while :;do
     case "$KEY" in
         k|$'\E[A') move_up ;;
         j|$'\E[B') move_down ;;
-        $'\E') exit 0 ;; # Esc
-        $'\n') sel=${choices[actual_pos]} ; exit 0 ;;
+        $'\E') break ;; # Esc
+        $'\n') sel=${choices[actual_pos]} ; break ;;
     esac
 done
