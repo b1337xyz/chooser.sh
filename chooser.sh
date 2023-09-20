@@ -73,13 +73,13 @@ cursor=$offset
 (( (total_choices - pos) >= ROWS )) && printf '\e[%d;1H▼' "$((ROWS + offset))"
 trap cleanup EXIT
 while :;do
-    # fixes exiting when holding down keys
     ((actual_pos = cursor - offset + pos)) || true
     list_choices
+    # fixes exiting when holding down keys
     read_keys
     sleep 0.0001
     case "${KEY}" in
-        k|$'\x1b\x5b\x42')
+        k|$'\x1b\x5b\x41')
             if (( cursor == offset )) && (( pos > 0 ));then
                 ((pos-=1))
             elif (( cursor > offset ));then
@@ -87,7 +87,7 @@ while :;do
                 cursor_up
             fi
             ;;
-        j|$'\x1b\x5b\x41')
+        j|$'\x1b\x5b\x42')
             (( actual_pos == (total_choices - 1) )) && continue # TODO: fix this, unecessary logic?
             if (( cursor == (ROWS + offset - 1) )) && (( (total_choices - pos) != ROWS ))
             then
