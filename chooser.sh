@@ -30,22 +30,21 @@ cleanup() {
 }
 
 read_keys(){
-    unset K1 K2 K3
+    unset K1 K2
     read -sN1 </dev/tty
-    K1="$REPLY"
-    read -sN2 -t 0.001 </dev/tty
-    K2="$REPLY"
-    read -sN1 -t 0.001 </dev/tty
-    K3="$REPLY"
-    # this will read full keysets like 'enter' and 'space' instead of just j or k
-    KEY="$K1$K2$K3"
-    sleep 0.0001
+    case "$REPLY" in
+        [a-z]|'') KEY=$REPLY; return ;;
+    esac
+    K1=$REPLY
+    read -sN2 -t 0.0001 </dev/tty
+    K2=$REPLY
+    KEY=$K1$K2
 }
 
 list_choices() {
     printf '\e[%d;1H' "$offset"  # go back to the start position
-    printf ' %-80s\n' "${choices[@]:pos:$ROWS}"
-    printf '\e[%d;1H\e[1;31m>\e[m' "$cursor"  # go back to the cursor position
+    printf ' %-'${COLUMNS}'s\n' "${choices[@]:pos:$ROWS}" | cut -c -$((COLUMNS - 2)) # trim
+    printf '\e[%d;1H\e[1;32m>\e[m' "$cursor"  # go back to the cursor position
 }
 
 move_up() {
@@ -59,11 +58,9 @@ move_up() {
 
 move_down() {
     (( actual_pos == (total_choices - 1) )) && return
-    if (( cursor == (ROWS + offset - 1) )) && (( (total_choices - pos) != ROWS ))
-    then
+    if (( cursor == (ROWS + offset - 1) )) && (( (total_choices - pos) != ROWS )); then
         ((pos++))
-    elif (( cursor < (ROWS + offset - 1) ))
-    then
+    elif (( cursor < (ROWS + offset - 1) )); then
         ((cursor++))
         cursor_down
     fi
@@ -97,14 +94,13 @@ cursor=$offset
 
 (( total_choices > ROWS )) && printf '\e[%d;1H▼' "$((ROWS + offset))"
 while :;do
-    ((actual_pos = cursor - offset + pos)) || true
+    ((actual_pos = cursor - offset + pos))
     list_choices
     read_keys
-    case "${KEY}" in
-        k|$'\x1b\x5b\x41') move_up ;;
-        j|$'\x1b\x5b\x42') move_down ;;
-        $'\x1b') exit 0 ;;  # ESC key
-        $'\n'|$'\x0a')      # TODO: fix this, pressing ctrl+j and some other keys triggers this case 
-            sel=${choices[actual_pos]} ; exit 0 ;;
+    case "$KEY" in
+        k|$'\E[A') move_up ;;
+        j|$'\E[B') move_down ;;
+        $'\E') exit 0 ;; # Esc
+        $'\n') sel=${choices[actual_pos]} ; exit 0 ;;
     esac
 done
