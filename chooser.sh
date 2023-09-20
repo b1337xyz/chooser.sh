@@ -73,6 +73,7 @@ init_term
 trap cleanup EXIT
 
 pos=0
+prev=1
 total_choices=${#choices[@]}
 ((ROWS = (LINES / 2) + 1))
 set_offset
@@ -87,8 +88,6 @@ fi
 cursor=$offset
 
 (( total_choices > ROWS )) && { goto_row "$((ROWS + offset))"; printf ▼; }
-prev=$pos
-list_choices
 while :;do
     ((actual_pos = cursor - offset + pos))
     (( pos != prev )) && { prev=$pos; list_choices; }
