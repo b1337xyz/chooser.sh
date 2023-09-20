@@ -98,6 +98,8 @@ while :;do
                 cursor_down
             fi
             ;;
+        $'\x1b') # ESC key
+            exit 0 ;;
         $'\n'|$'\x0a') # TODO: fix this, pressing ctrl+j and some other keys triggers this case 
             sel=${choices[actual_pos]} ; exit 0 ;;
     esac
