@@ -1,7 +1,8 @@
 ```
 Usage: bash chooser.sh [choices...]
     
-# Use k and j to go up and down
+# Use k and j or the arrow keys to go up and down
+# Press Tab to mark multiple choices
 # Press Enter to choose
 
 bash choorser.sh $(ls -a)
