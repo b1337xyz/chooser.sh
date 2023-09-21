@@ -8,7 +8,7 @@ cursor_down(){ printf '\r \e[B'; }
 goto_row() { printf '\e[%d;1H' "$1"; }
 set_offset() { IFS='[;' read -p $'\e[6n' -d R -rs _ offset _ _ </dev/tty; }
 printc() { printf '\r\e[1;31m>\e[m'; }       # print a custom cursor
-mark() { printf '\r\e[1;34m>\e[m'; } # TODO: improve, this is temporary
+mark() { printf '\r\e[1;34m>\e[m'; }
 is_marked() {
     for m in "${marks[@]}";do
         [ "$m" -eq "$1" ] && return 0
@@ -36,7 +36,7 @@ cleanup() {
     exec 1>&3 3>&-  # restore stdout and close fd #3
     for sel in "${!marks[@]}";do
         printf '%s\n' "$sel"
-    done | awk '!seen[$0]++'
+    done
     exit 0
 }
 
@@ -52,6 +52,7 @@ read_keys() {
 list_choices() {
     goto_row "$offset"  # go back to the start position
     printf ' %-'${COLUMNS}'s\n' "${choices[@]:pos:ROWS}" | cut -c -$((COLUMNS - 2)) # trim
+    goto_row "$cursor"
 }
 
 move_up() {
@@ -86,8 +87,8 @@ fi
 init_term
 trap cleanup EXIT
 
-pos=0
-prev=1
+pos=0  # determinates the starting position of what is being listed in `list_choices`
+prev=1 # save the previous position
 total_choices=${#choices[@]}
 ((ROWS = (LINES / 2) + 1))
 set_offset
@@ -102,7 +103,7 @@ fi
 cursor=$offset
 
 while :;do
-    ((actual_pos = cursor - offset + pos))
+    ((actual_pos = cursor - offset + pos))  # idk, it just werks
     if (( total_choices > ROWS )) && (( actual_pos < (total_choices - 1) ));then
         goto_row "$((ROWS + offset))"; printf ▼
         goto_row "$cursor"
@@ -113,12 +114,14 @@ while :;do
 
     (( pos != prev )) && { prev=$pos; list_choices; }
 
-    goto_row "$offset"
-    for ((i=pos; i < (pos + ROWS); i++)); do
-        if is_marked "$i";then mark; else printf '\r '; fi
-        printf '\e[B'
-    done
-    goto_row "$cursor"
+    if (( ${#marks[@]} > 0 ));then
+        goto_row "$offset"
+        for ((i=pos; i < (pos + ROWS); i++)); do
+            if is_marked "$i";then mark; else printf '\r '; fi
+            printf '\e[B'
+        done
+        goto_row "$cursor"
+    fi
     printc
 
     read_keys
@@ -132,7 +135,11 @@ while :;do
                 unset "marks[${key}]"
             else
                 marks["$key"]=$actual_pos
-                ((actual_pos < (total_choices - 1) )) && move_down
+                if ((actual_pos < (total_choices - 1) ));then
+                    move_down
+                elif ((actual_pos == (total_choices - 1) ));then
+                    move_up
+                fi
             fi
             ;;
         $'\n') [ "${#marks[@]}" -eq 0 ] && marks["${choices[actual_pos]}"]=0 ; exit ;;
