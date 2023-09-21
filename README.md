@@ -7,15 +7,15 @@ Usage: bash chooser.sh [choices...]
 
 bash choorser.sh $(ls -a)
  README.md
-█chooser.sh
+>chooser.sh
  .git
 
 # choose from stdin using `-`
 seq 1 5 | bash chooser.sh -
  1
  2
- 3
-█4
+>3
+>4
  5
 
 # storing the output
