@@ -2,7 +2,19 @@
 # shellcheck disable=SC2162
 #   read without -r will mangle backslashes. [SC2162]
 
-usage() { printf 'Usage: %s [choices...]\n' "${0##*/}"; exit 0; }
+usage() { 
+    cat << EOF
+Usage: bash "${0##*/}" [choices...]
+
+    Use k and j or the arrow keys to go up and down
+    Press Tab to mark/unmark multiple choices
+    Press Enter to choose
+
+    Use - to choose from stdin
+
+EOF
+    exit 0  
+}
 cursor_up(){ printf '\r \e[A'; }
 cursor_down(){ printf '\r \e[B'; }
 goto_row() { printf '\e[%d;1H' "$1"; }
