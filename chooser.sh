@@ -4,12 +4,11 @@
 
 usage() { 
     cat << EOF
-Usage: bash "${0##*/}" [choices...]
+Usage: "${0##*/}" [choices...]
 
     Use k and j or the arrow keys to go up and down
     Press Tab to mark/unmark multiple choices
     Press Enter to choose
-
     Use - to choose from stdin
 
 EOF
