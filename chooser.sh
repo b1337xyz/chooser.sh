@@ -117,11 +117,10 @@ while :;do
     ((actual_pos = cursor - offset + pos))  # idk, it just werks
     if (( total_choices > ROWS )) && (( actual_pos < (total_choices - 1) ));then
         goto_row "$((ROWS + offset))"; printf ▼
-        goto_row "$cursor"
     else
         goto_row "$((ROWS + offset))"; printf '\r '
-        goto_row "$cursor"
     fi
+    goto_row "$cursor"
 
     (( pos != prev )) && { prev=$pos; list_choices; }
 
@@ -133,8 +132,8 @@ while :;do
         done
         goto_row "$cursor"
     fi
-    printc
 
+    printc
     read_keys
     case "$KEY" in
         k|$'\E[A') move_up ;;
